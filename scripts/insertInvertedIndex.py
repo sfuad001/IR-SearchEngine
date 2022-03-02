@@ -46,9 +46,9 @@ if (os.path.isfile(file_path)):
 				tfIdf = docId_tfIdf.split("#")[1]
 	
 				json_obj = {
-                	"docId": docId,
-                	"tfIdf": tfIdf
-            	}
+					"docId": docId,
+					"tfIdf": tfIdf
+				}
 				docId_jsonList.append(json_obj)
 			except:
 				print("exception occured in docId splitting")
