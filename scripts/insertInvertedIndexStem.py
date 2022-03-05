@@ -42,7 +42,7 @@ if (os.path.isfile(file_path)):
 			print("docId..: ", docId_tfIdf)
 			print(docId_tfIdf.split("#"))
 			try:
-				docId = docId_tfIdf.split("_-_wikipedia.txt")[0]
+				docId = docId_tfIdf.split("_-_Wikipedia.txt")[0]
 				tfIdf = docId_tfIdf.split("#")[1]
 	
 				json_obj = {
