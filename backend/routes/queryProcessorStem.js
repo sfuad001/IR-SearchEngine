@@ -8,13 +8,6 @@ const URI = "mongodb://127.0.0.1:27017";
 const stemedQueryFile = "output.txt";
 
 async function stemQuery(query) {
-    const childPorcess = await exec('java -jar C:\\Users\\devil\\eclipse-workspace\\invoke-jar.jar "Jar is invoked by Node js"', function(err, stdout, stderr) {
-        if (err) {
-            console.log(err)
-        }
-        console.log(stdout)
-    })
-
     const outputFilePath = "output.txt";
     const cmd = `java -jar TestIR-1.0-SNAPSHOT-jar-with-dependencies.jar "${query}" "${outputFilePath}"`;
 
@@ -32,17 +25,6 @@ async function stemQuery(query) {
 
 async function getDocuments(client){
     databasesList = await client.db().admin().listDatabases();
- 
-    // console.log("Databases:");
-    // //const db = awiat client.db('ir');
-
-    // //db.collection("rooms").find({"users.userId":userId})
-    // const stemIICollection = client.db('ir').collection('invertedIndexStem');
-    // const wikipediaCollection = client.db('ir').collection('wikipedia');
-
-    // const results = stemIICollection.find();
-    // const s = await results.toArray();
-    // console.log(s);
 
     const queryData = fs.readFileSync(stemedQueryFile);
     const queryWords = queryData.toString().split(" ");
@@ -69,31 +51,14 @@ async function getDocuments(client){
                 const doc = element.docIdList[i];
                 const docData = await client.db('ir').collection('wikipedia').find({'docId': doc.docId}).toArray();
                 docDataList = docDataList.concat(docData);
-                //console.log(docDataList);
             }
-            // element.docIdList.forEach(async(doc) => {
-            //     const docData = await client.db('ir').collection('wikipedia').find({'docId': doc.docId}).toArray();
-            //     docDataList = docDataList.concat(docData);
-            //     console.log(docDataList);
-            // })
         }
         wordToDocMap.set(curWord, docDataList);
         //fs.writeFileSync("test.json", JSON.stringify(docDataList, null, 4));
     }
+
     //console.log(wordToDocMap);
-
-
     return wordToDocMap;
-
-    // const results = await client.db('ir').collection('invertedIndexStem').find({'word': 'ucr'}).toArray();
-
-    // for (i = 0; i < results.length; i++) {
-    //     results[i].docIdList.forEach(element => {
-    //         console.log(element);
-    //     });
-    // }
-
-    // console.log(results);
 };
  
 
@@ -102,16 +67,16 @@ router.get('/', async function(req, res, next) {
     let query = "ucr soccering played"
     const client = new MongoClient(URI);
     let docList = []
-    let result;
+    let wordToDocMap;
     try {
         // stem the query
         await stemQuery(query);
-
         //connect the database
         await client.connect()
 
-        //
-        result = await getDocuments(client)
+        // get documents for the query words
+        // the output is a map <word, doc>
+        wordToDocMap = await getDocuments(client)
         // console.log(result);
         // console.log(result.get('ucr').length)
         // console.log(result.get('soccer').length)
@@ -133,7 +98,7 @@ router.get('/', async function(req, res, next) {
     const output = {
         docList: docList
     }
-    res.send({"result": result});
+    res.send({"result": wordToDocMap});
 });
 
 module.exports = router;
