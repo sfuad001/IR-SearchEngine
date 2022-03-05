@@ -12,7 +12,7 @@ db = mongo_client.ir
 
 # input file directory
 # change it according to your machine
-dir_path = "/Users/sakibfuad/Documents/winter2022/IR/project/data/crawledAllText/*.txt"
+dir_path = "/Users/sakibfuad/Documents/winter2022/IR/project/crawledAllText/*.txt"
 file_list = glob.glob(dir_path)
 
 for file_path in file_list:
@@ -22,13 +22,14 @@ for file_path in file_list:
 			#mongodb collection name is wikipedia
 			file = open(file_path, "r")
 			all_lines = file.readlines()
-			title = all_lines[0].split("\n")[0]
 			all_lines.pop(0)
 			body = all_lines
 			filename = os.path.basename(file_path)
+			title = filename.split("_-_Wikipedia.txt")[0].replace("cs242", ":")
+			url = "https://en.wikipedia.org/wiki/" + title
 
 			#insert data
-			json_data = {"docId": title, "body": body, "filename": filename}
+			json_data = {"docId": title, "body": body, "filename": filename, "url": url}
 			# collection name is "wikipedia"
 			rec_id = db.wikipedia.insert_one(json_data)
 		

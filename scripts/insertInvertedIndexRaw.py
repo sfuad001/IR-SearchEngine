@@ -11,7 +11,7 @@ db = mongo_client.ir
 
 # file path 
 # change it according to your machine
-file_path = "/Users/sakibfuad/Documents/winter2022/IR/project/invertedIndex"
+file_path = "/Users/sakibfuad/Documents/winter2022/IR/project/raw-part-r-00000"
 
 if (os.path.isfile(file_path)):
 	#process each file and store in mongodb
@@ -42,7 +42,7 @@ if (os.path.isfile(file_path)):
 			print("docId..: ", docId_tfIdf)
 			print(docId_tfIdf.split("#"))
 			try:
-				docId = docId_tfIdf.split(".txt")[0]
+				docId = docId_tfIdf.split("_-_wikipedia.txt")[0]
 				tfIdf = docId_tfIdf.split("#")[1]
 	
 				json_obj = {
@@ -61,7 +61,7 @@ if (os.path.isfile(file_path)):
 			}
 			
 			# mongodb collection name for invertedIndex data is "invertedIndex"
-			rec_id = db.invertedIndex.insert_one(data)	
+			rec_id = db.invertedIndexRaw.insert_one(data)	
 			print("rec_id: ", rec_id)
 		except:
 			print("An exception occured while inserting data in mongodb")
