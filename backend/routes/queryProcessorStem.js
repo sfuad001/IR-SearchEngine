@@ -4,6 +4,10 @@ var router = express.Router();
 const fs = require('fs');
 const { type } = require('os');
 const exec = require('child_process').exec;
+const util = require('util');
+const { response } = require('../app');
+const readFile = util.promisify(fs.readFile);
+const path = require('path');
 
 const URI = "mongodb://127.0.0.1:27017";
 const stemedQueryFile = "output.txt";
@@ -104,8 +108,8 @@ function cutTheArticle(docData) {
             }
         }
 
-        console.log(chunkedBody[1].length);
-        console.log(chunkedBody);
+        //console.log(chunkedBody[1].length);
+        // console.log(chunkedBody);
         let chunkedElement = {
             "_id": docData[i]._id,
             "docId": docData[i].docId,
@@ -143,13 +147,29 @@ async function getResultDocuments(client, docToScoreMapSorted) {
     return [docDataList, chunkedDataList];
 }
 
+function getImageFilenames(chunkedBodyDocsList) {
+    let fileNameList = [];
+    for (let i = 0; i < chunkedBodyDocsList.length; i++) {
+        try {
+            const docId = chunkedBodyDocsList[i].docId;
+            fileNamePart = docId.replace("_", " ");
+            fileNameList.push(fileNamePart);
+        } catch (err) {
+            console.log(err);
+        }
+    }
+    return fileNameList;
+}
+
 
 /* GET home page. */
 router.get('/', async function (req, res, next) {
     let query = req.query.query;
+    const searchType = req.query.searchType;
     console.log(typeof query == "undefined");
+    console.log(req.query);
 
-    if  (typeof query == "undefined") {
+    if (typeof query == "undefined") {
         return res.send({
             "success": false,
             "result": []
@@ -199,10 +219,51 @@ router.get('/', async function (req, res, next) {
     }
     //client.close()
     //console.log(chunkedBodyDocsList);
-    res.send({ 
-        "success": true,
-        "result": chunkedBodyDocsList
+
+    // if (searchType === "IMAGE") {
+    // get the image files
+    let imageFileNames = getImageFilenames(chunkedBodyDocsList);
+    var fileNames = [];
+    const basePath = "/Users/sakibfuad/Documents/winter2022/IR/project/data/crawledImages";
+
+    fileNames = fs.readdirSync(basePath, ['**.png']);  // use async function instead of sync
+
+    let outputFileNames = [];
+    for (let i = 0; i < imageFileNames.length; i++) {
+        for (let j = 0; j < fileNames.length; j++) {
+            if (fileNames[j].includes(imageFileNames[i])) {
+                outputFileNames.push(fileNames[j]);
+            }
+        }
+    }
+
+    var data = {};
+    const files = outputFileNames.map(function (filename) {
+        filepath = path.join(basePath, filename);
+        return readFile(filepath); //updated here
     });
+    const response = {};
+    Promise.all(files).then(fileNames => {
+        //response.data = fileNames;
+        let result = [];
+        for (let i = 0; i < fileNames.length; i++) {
+            var b64 = Buffer.from(fileNames[i]).toString('base64')
+            result.push(b64);
+        }
+        response.imageResult = result;
+        response.textResult = chunkedBodyDocsList;
+        res.json(response);
+    }).catch(error => {
+        res.status(400).json(response);
+    });
+    // } 
+    // else {
+    //     res.send({
+    //         "success": true,
+    //         "searchType": "TEXT",
+    //         "result": chunkedBodyDocsList
+    //     });
+    // }
 });
 
 module.exports = router;
