@@ -230,10 +230,15 @@ function addBm25(fullbodyDocsList, chunkedBodyDocsList, invertedIndexList, query
     return newChunkedBodyDocsList;
 }
 
+function parseHrtimeToSeconds(hrtime) {
+    var seconds = (hrtime[0] + (hrtime[1] / 1e9)).toFixed(3);
+    return seconds;
+}
 
 
 /* GET home page. */
 router.get('/', async function (req, res, next) {
+    var startTime = process.hrtime();
     let query = req.query.query;
     const searchType = req.query.searchType;
     const scoringType = "tfidf";
@@ -328,6 +333,7 @@ router.get('/', async function (req, res, next) {
         }
         response.imageResult = result;
         response.textResult = chunkedBodyDocsList;
+        response.searchTime = parseHrtimeToSeconds(process.hrtime(startTime));
         res.json(response);
     }).catch(error => {
         res.status(400).json(response);

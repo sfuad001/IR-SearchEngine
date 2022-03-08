@@ -39,6 +39,7 @@ class App extends React.Component {
       gotResult: false,
       searchType: "TEXT",
       firstTimeSearch: true,
+      searchTime: 0
     };
   }
 
@@ -110,11 +111,13 @@ class App extends React.Component {
       } else {
         this.setState({
           gotResult: true,
-          noAnswer: false
+          noAnswer: false,
+          searchTime: response.data.searchTime
         })
       }
     }).catch(err => {
       this.setState({
+        gotResult: false,
         noAnswer: false,
         isLoading: false
       })
@@ -194,6 +197,11 @@ class App extends React.Component {
                 </div>)
               }
               {/* Show text results */}
+              {this.state.gotResult && (
+                <div className='mt-3' style={{ fontSize: "10px" }}>
+                  Search results found in <span>{this.state.searchTime}</span> seconds.
+                </div>
+              )}
               {this.state.searchType === "TEXT" && this.state.textResults.map(result => (
                 <div className='mt-1'>
                   <a href={result.url} target="_blank">{result.docId}</a>
