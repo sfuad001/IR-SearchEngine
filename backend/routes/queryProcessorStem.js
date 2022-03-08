@@ -37,6 +37,7 @@ async function getDocuments(client) {
 
     const wordToDocMap = new Map();
     const docToTfidfMap = new Map();
+    let invertedIndexList = [];
     for (i = 0; i < queryWords.length; i++) {
         const curWord = queryWords[i];
         let docDataList = [];
@@ -58,7 +59,7 @@ async function getDocuments(client) {
             //     const docData = await client.db('ir').collection('wikipedia').find({'docId': doc.docId}).toArray();
             //     docDataList = docDataList.concat(docData);
             // }
-
+            invertedIndexList = invertedIndexList.concat(invertedIndexEntries[i]);
             docDataList = docDataList.concat(invertedIndexEntries[i].docIdList);
         }
 
@@ -80,7 +81,7 @@ async function getDocuments(client) {
     const docToTfidfMapSorted = new Map([...docToTfidfMap.entries()].sort((a, b) => b[1] - a[1]));
 
     //console.log(wordToDocMap);
-    return [wordToDocMap, docToTfidfMapSorted];
+    return [wordToDocMap, docToTfidfMapSorted, invertedIndexList];
 };
 
 
@@ -161,11 +162,81 @@ function getImageFilenames(chunkedBodyDocsList) {
     return fileNameList;
 }
 
+function getWordCount(textArray) {
+    let wordCnt = 0;
+    for (let i = 0; i < textArray.length; i++) {
+        let wordsCntInLine = textArray[i].split(" ").length;
+        wordCnt += wordsCntInLine;
+    }
+    return wordCnt;
+}
+
+function BM25_score(query, docId, data, wordCountDoc) {
+    var k1 = 1.2;
+    var k2 = 100;
+    var b = 0.75;
+    // var avLen = 3094; //average number of words in all documents
+    var avLen = wordCountDoc;
+    var totalFiles = 12521;
+    var totalWords = 38755637;
+    var K = k1 * ((1 - b) + b * (0.9));
+    const words = query.split(" ");
+    //console.log(words);
+
+    var bm25 = 0.0;
+    for (var i = 0; i < words.length; i++) {
+        //console.log(words[i]);
+        var word = words[i];
+        let score_array = data.find(element => element.word === words[i]).docIdList;
+        //console.log(scoress);
+        let docObject = score_array.find(element => element.docId === docId);
+        var tfIdf = 0.0;
+        if (typeof (docObject) != "undefined") {
+            tfIdf = docObject.tfIdf;
+        }
+        //console.log(tfIdf);
+        let idf = totalFiles / score_array.length;
+        let n_i = score_array.length;
+        //console.log(n_i);
+        let f_i = Math.ceil(tfIdf / idf);
+        //finding qf_i
+        var qf_i = 0;
+        for (var j = 0; j < words.length; j++) {
+            if (words[j] == word) {
+                qf_i = qf_i + 1;
+            }
+        }
+        //console.log(qf_i);
+
+        bm25 = bm25 + Math.log((totalFiles - n_i + 0.5) / (n_i + 0.5)) * (((k1 + 1) * f_i) / (K + f_i)) * (((k2 + 1) * qf_i) / (k2 + qf_i));
+    }
+    return bm25;
+}
+
+function addBm25(fullbodyDocsList, chunkedBodyDocsList, invertedIndexList, query) {
+    console.log("addbm25", invertedIndexList);
+    let docToBM25Map = new Map();
+    for (let i = 0; i < fullbodyDocsList.length; i++) {
+        const wordCountDoc = getWordCount(fullbodyDocsList[i].body);
+        const bm25 = BM25_score(query, fullbodyDocsList[i].docId, invertedIndexList, wordCountDoc);
+        docToBM25Map.set(fullbodyDocsList[i].docId, bm25);
+        console.log(bm25);
+    }
+    const sortedDocToBM25Map = new Map([...docToBM25Map.entries()].sort((a, b) => b[1] - a[1]));
+    let newChunkedBodyDocsList = [];
+    for (let  [key, value] of sortedDocToBM25Map) {
+        newChunkedBodyDocsList.push(chunkedBodyDocsList.find(element => element.docId === key))
+    }
+    return newChunkedBodyDocsList;
+}
+
+
 
 /* GET home page. */
 router.get('/', async function (req, res, next) {
     let query = req.query.query;
     const searchType = req.query.searchType;
+    const scoringType = "tfidf";
     console.log(typeof query == "undefined");
     console.log(req.query);
 
@@ -202,10 +273,16 @@ router.get('/', async function (req, res, next) {
         const result = await getDocuments(client)
         wordToDocMap = result[0];
         docToScoreMapSorted = result[1];
+        const invertedIndexList = result[2];
         // load top 5 documents
         resultDocsList = await getResultDocuments(client, docToScoreMapSorted);
         fullbodyDocsList = resultDocsList[0];
         chunkedBodyDocsList = resultDocsList[1];
+
+        // add bm25 results 
+        if (scoringType === "bm25") {
+            chunkedBodyDocsList = addBm25(fullbodyDocsList, chunkedBodyDocsList, invertedIndexList, query);
+        }
 
         console.log("New era of beginning");
 
@@ -219,14 +296,12 @@ router.get('/', async function (req, res, next) {
     }
     //client.close()
     //console.log(chunkedBodyDocsList);
-
-    // if (searchType === "IMAGE") {
     // get the image files
     let imageFileNames = getImageFilenames(chunkedBodyDocsList);
     var fileNames = [];
     const basePath = "/Users/sakibfuad/Documents/winter2022/IR/project/data/crawledImages";
 
-    fileNames = fs.readdirSync(basePath, ['**.png']);  // use async function instead of sync
+    fileNames = fs.readdirSync(basePath, ['**.*']);  // use async function instead of sync
 
     let outputFileNames = [];
     for (let i = 0; i < imageFileNames.length; i++) {
@@ -242,6 +317,7 @@ router.get('/', async function (req, res, next) {
         filepath = path.join(basePath, filename);
         return readFile(filepath); //updated here
     });
+
     const response = {};
     Promise.all(files).then(fileNames => {
         //response.data = fileNames;
@@ -256,14 +332,6 @@ router.get('/', async function (req, res, next) {
     }).catch(error => {
         res.status(400).json(response);
     });
-    // } 
-    // else {
-    //     res.send({
-    //         "success": true,
-    //         "searchType": "TEXT",
-    //         "result": chunkedBodyDocsList
-    //     });
-    // }
 });
 
 module.exports = router;

@@ -197,7 +197,7 @@ class App extends React.Component {
               {this.state.searchType === "TEXT" && this.state.textResults.map(result => (
                 <div className='mt-1'>
                   <a href={result.url} target="_blank">{result.docId}</a>
-                  <div style={{ fontSize: "10px" }}>{result.chunkedBody}</div>
+                  <div style={{ fontSize: "10px" }}>{result.chunkedBody}..</div>
                 </div>
               ))}
               {/* Show image results */}
