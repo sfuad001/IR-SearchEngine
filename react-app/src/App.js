@@ -86,11 +86,13 @@ class App extends React.Component {
       gotResult: false,
       firstTimeSearch: false,
       textResults: [],
-      imageResults: []
+      imageResults: [],
+      optionName: "hadoop"
     })
 
     axios.get('http://localhost:3001/query-stem', {
       params: {
+        optionName: this.state.optionName,
         searchType: this.state.searchType,
         query: query
       }
@@ -131,6 +133,14 @@ class App extends React.Component {
       searchType: event.target.value
     });
   }
+
+  setOptions = (option) => {
+    console.log(option);
+    this.setState({
+      optionName: option
+    })
+  }
+
   componentDidMount() {
     // this.getPostCountVsLocationSortedData();
     // this.getTrendsData();
@@ -156,6 +166,12 @@ class App extends React.Component {
         <Container className="p-3">
           <Row>
             <Col lg="2">
+              <div>
+                <select id="options" onChange = {event => this.setOptions(event.target.value)}>
+                  <option value="hadoop">Hadoop</option>
+                  <option value="lucene">Lucene</option>
+                </select>
+              </div>
             </Col>
             <Col lg="7">
               <div className="search">

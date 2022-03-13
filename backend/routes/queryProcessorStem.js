@@ -8,6 +8,7 @@ const util = require('util');
 const { response } = require('../app');
 const readFile = util.promisify(fs.readFile);
 const path = require('path');
+const internal = require('stream');
 
 const URI = "mongodb://127.0.0.1:27017";
 const stemedQueryFile = "output.txt";
@@ -148,6 +149,67 @@ async function getResultDocuments(client, docToScoreMapSorted) {
     return [docDataList, chunkedDataList];
 }
 
+function getLuceneDocNameList(query) {
+    const fileData = fs.readFileSync("luceneResults/shakespeareSearch.txt");
+    const lines = fileData.toString().split("\n");
+    let start =  false;
+    let docIdList = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.includes("TF-IDF score:")) {
+            start = true;
+        }
+        if (start) {
+            try {
+                const splitWords = line.split(")-->");
+                let docIdInitial = splitWords[1];
+                console.log(docIdInitial);
+                let docId = docIdInitial;
+                console.log(docId);
+                let tfIdfPart = splitWords[0];
+                let rank = tfIdfPart.split("( score:")[0];
+                let tfIdf = tfIdfPart.split("( score:")[1];
+                docIdList.push(docId);
+                if (parseInt(rank) >= 7) {
+                    start = false;
+                }
+            }
+            catch(err) {
+                console.log(err);
+            }
+        }
+    }
+    return docIdList;
+}
+
+async function getLuceneResults(client, query) {
+    let docDataList = [];
+    let chunkedDataList = [];
+    let i = 0;
+
+    let docIdList = getLuceneDocNameList(query);
+    console.log(docIdList);
+
+    for (let i = 0; i < docIdList.length; i++) {
+        // const element = invertedIndexEntries[i];
+        // query in the wikipedia collection
+        // input of the query is: docId
+        // output of the query is, e.g., [{'docId': 'ucr', 'body': 'jhweh', 'filename':'ucr.txt', 'url': 'https://w.com'}]
+        const docId = docIdList[i];
+        const docData = await client.db('ir').collection('wikipedia').find({ 'docId': docId }).toArray();
+        //console.log(docData);
+        const chunkedDocData = cutTheArticle(docData);
+        docDataList = docDataList.concat(docData);
+        chunkedDataList = chunkedDataList.concat(chunkedDocData);
+        if (i == 20) {
+            break;
+        }
+    }
+    return [docDataList, chunkedDataList];
+}
+
 function getImageFilenames(chunkedBodyDocsList) {
     let fileNameList = [];
     for (let i = 0; i < chunkedBodyDocsList.length; i++) {
@@ -224,7 +286,7 @@ function addBm25(fullbodyDocsList, chunkedBodyDocsList, invertedIndexList, query
     }
     const sortedDocToBM25Map = new Map([...docToBM25Map.entries()].sort((a, b) => b[1] - a[1]));
     let newChunkedBodyDocsList = [];
-    for (let  [key, value] of sortedDocToBM25Map) {
+    for (let [key, value] of sortedDocToBM25Map) {
         newChunkedBodyDocsList.push(chunkedBodyDocsList.find(element => element.docId === key))
     }
     return newChunkedBodyDocsList;
@@ -241,6 +303,7 @@ router.get('/', async function (req, res, next) {
     var startTime = process.hrtime();
     let query = req.query.query;
     const searchType = req.query.searchType;
+    const optionName = req.query.optionName;
     const scoringType = "tfidf";
     console.log(typeof query == "undefined");
     console.log(req.query);
@@ -275,14 +338,22 @@ router.get('/', async function (req, res, next) {
 
         // get documents for the query words
         // the output is a map <word, doc>
-        const result = await getDocuments(client)
+        let result = [];
+        result = await getDocuments(client);
+
         wordToDocMap = result[0];
         docToScoreMapSorted = result[1];
         const invertedIndexList = result[2];
         // load top 5 documents
-        resultDocsList = await getResultDocuments(client, docToScoreMapSorted);
-        fullbodyDocsList = resultDocsList[0];
-        chunkedBodyDocsList = resultDocsList[1];
+        if (optionName === "hadoop") {
+            resultDocsList = await getResultDocuments(client, docToScoreMapSorted);
+            fullbodyDocsList = resultDocsList[0];
+            chunkedBodyDocsList = resultDocsList[1];
+        } else {
+            resultDocsList = await getLuceneResults(client, query);
+            fullbodyDocsList = resultDocsList[0];
+            chunkedBodyDocsList = resultDocsList[1];
+        }
 
         // add bm25 results 
         if (scoringType === "bm25") {
