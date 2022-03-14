@@ -24,7 +24,7 @@ mongodb:
 node server: 
 1.First install nodejs in your machine. 
 2.Then go to IR-SearchEngine/backend/ and run the command npm install. 
-3. After that run \verb|npm start|. The node server will start listening.
+3. After that run npm start. The node server will start listening.
 
 react app: 
 1.Go to IR-SearchEngine/react-app/ and run npm install. 
