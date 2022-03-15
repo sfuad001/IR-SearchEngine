@@ -1,6 +1,8 @@
-#Part A of the project
+**Part A of the project**
 
 **The lucene indexing part is here : https://github.com/jannatmeem95/IR_Project-SearchEngine.git**
+
+**Part B of the project **
 
 # IR-SearchEngine
 
