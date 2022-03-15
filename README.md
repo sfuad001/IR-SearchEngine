@@ -8,7 +8,7 @@
 
 **Lucene and Hadoop Indexing:**
 
-"Group2-Lucene_MapReduce" directory contains the code for both the indexing. Inside this directory, the "Lucene" directory contains our lucene indexing code and "Wordcount" directory contains the hadoop indexing code. There is a separate readme.txt provided for this part inside that directory.
+"Group2-Lucene_MapReduce" directory contains the code for both the indexing. Inside this directory, the "Lucene" directory contains our lucene indexing code and "Wordcount" directory contains the hadoop indexing code. There is a separate readme.md provided for this part inside that directory.
 
 **Crawler and HDFS:**
 We have three bash scripts named crawler.sh, lucene_indexing.sh, and lucene_search.sh. Their functionalities are discussed below:
