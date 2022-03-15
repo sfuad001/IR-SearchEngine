@@ -1,3 +1,7 @@
+#Part A of the project
+
+**The lucene indexing part is here : https://github.com/jannatmeem95/IR_Project-SearchEngine.git**
+
 # IR-SearchEngine
 
 **Crawler and HDFS:**
