@@ -35,3 +35,6 @@ node server:
 react app: 
 1.Go to IR-SearchEngine/react-app/ and run npm install. 
 2.Then run npm start. You can now access the search engine web interface in http://localhost.com:3000.
+
+Group2-Lucene_MapReduce:
+Contains the source code for Lucene part and the WordCount directory inside contains the source code for MapReduce.
