@@ -22,6 +22,15 @@ lucene_indexing.sh: It generates the index files from the given documents. It as
 lucene_search.sh: This script outputs top k results of the given query using the indexed files. It takes the query, analyzer_option and totalHitCount (k) as arguments. One example to run this script is given below:
 	sh lucene_search.sh "UC Education System" 2 5
 	
+
+**Hadoop Indexing**
+
+We created a jar file named "tfidfwithstemming.jar" and ran it on the bolt machine using the following command: 
+
+java -jar tfidfwithstemming.jar input output
+
+[input directory is the data/crawledAllText/ directory in out bolt machine where all crawled data is stored]
+	
 **Web Interface**
 In order to start the web interface, follow the guidelines given below:
 
