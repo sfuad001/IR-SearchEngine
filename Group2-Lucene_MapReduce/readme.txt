@@ -1,3 +1,5 @@
+**Lucene Indexing**
+
 We have three bash scripts named crawler.sh, lucene_indexing.sh, and lucene_search.sh. Their functionalities are discussed below:
 
 First, to run them go to the directory named "data". From inside "data" the following scripts can be run:
@@ -18,3 +20,7 @@ This script outputs top-k results of the given query using the indexed files. It
 	sh lucene_search.sh "UC Education System" 2 5
 
 WordCount directory contains our implementation for MapReduce based tf-idf calculation for generating the inverted index files.
+
+**Hadoop Indexing**
+
+We created a jar file and ran it on the bolt machine. 
