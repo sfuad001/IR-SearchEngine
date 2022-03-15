@@ -27,4 +27,4 @@ We created a jar file named "tfidfwithstemming.jar" and ran it on the bolt machi
 
 java -jar tfidfwithstemming.jar input output
 
-[input directory is the data/crawledAllText/ directory in out bolt machine where all crawled data is stored.
+[input directory is the data/crawledAllText/ directory in out bolt machine where all crawled data is stored]
