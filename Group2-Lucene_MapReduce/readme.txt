@@ -23,4 +23,8 @@ WordCount directory contains our implementation for MapReduce based tf-idf calcu
 
 **Hadoop Indexing**
 
-We created a jar file and ran it on the bolt machine. 
+We created a jar file named "tfidfwithstemming.jar" and ran it on the bolt machine using the following command: 
+
+java -jar tfidfwithstemming.jar input output
+
+[input directory is the data/crawledAllText/ directory in out bolt machine where all crawled data is stored.
