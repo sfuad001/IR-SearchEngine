@@ -32,6 +32,7 @@ java -jar tfidfwithstemming.jar input output
 [input directory is the data/crawledAllText/ directory in out bolt machine where all crawled data is stored]
 	
 **Web Interface**
+
 In order to start the web interface, follow the guidelines given below:
 
 mongodb: 
